@@ -114,4 +114,4 @@ Hello [world](https://example.com)
 Another task https://example.com
 ```
 
-See [Keybindings](https://github.com/mdillondc/todo-txt-tui/tree/main#keybindings) for how to open links.
+See [Keybindings](https://github.com/mdillondc/todo_txt_tui/tree/main#keybindings) for how to open links.

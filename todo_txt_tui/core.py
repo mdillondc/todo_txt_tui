@@ -1505,7 +1505,7 @@ def main():
             print(f"Version: {__version__}")
             return
         elif sys.argv[1] == '--help':
-            print("Help (keybindings, features, etc): https://github.com/mdillondc/todo-txt-tui")
+            print("Help (keybindings, features, etc): https://github.com/mdillondc/todo_txt_tui")
             return
 
     # Check if a file path for the todo.txt file is provided as a command-line argument
