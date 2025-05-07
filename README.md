@@ -11,7 +11,7 @@ Supports Linux and macOS. In theory, it should work on Windows, but this is unte
 ### Prerequisites
 
 - Git
-- [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/download)
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 
 ### Setup Instructions
 
