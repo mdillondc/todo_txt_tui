@@ -1186,20 +1186,25 @@ class Body(urwid.ListBox):
         Constantly updates the __focused_task_index/text__ global so we know which task is
         in focus at all times for easier task interaction throughout
         """
-
-        focused_widget = self.focus
-        focused_position = self.focus_position
         global __focused_task_index__  # Ensure you're updating the global variable
-        __focused_task_index__ = focused_position
-
-        # Check if the focused widget is a CustomCheckBox
-        if hasattr(focused_widget, 'original_widget') and isinstance(focused_widget.original_widget, CustomCheckBox):
-            original_text = focused_widget.original_widget.original_text
-        else:
-            original_text = "Not a CustomCheckBox"
-
         global __focused_task_text__
-        __focused_task_text__ = original_text
+        
+        try:
+            focused_widget = self.focus
+            focused_position = self.focus_position
+            __focused_task_index__ = focused_position
+
+            # Check if the focused widget is a CustomCheckBox
+            if hasattr(focused_widget, 'original_widget') and isinstance(focused_widget.original_widget, CustomCheckBox):
+                original_text = focused_widget.original_widget.original_text
+            else:
+                original_text = "Not a CustomCheckBox"
+
+            __focused_task_text__ = original_text
+        except IndexError:
+            # ListBox is empty (e.g., no search results), set defaults
+            __focused_task_index__ = None
+            __focused_task_text__ = None
 
         loop.set_alarm_in(__track_focused_task_interval__,
                           self.track_focused_task)  # Schedule the next update in 1 second
