@@ -77,28 +77,30 @@ The application requires an existing todo.txt file. If the specified file doesn'
 
 ## Keybindings
 
-- `j`/`down`: Move cursor down
-- `k`/`up`: Move cursor up
-- `gg`: Go top of list
-- `G`: Go to bottom of list
-- `n`: Add new task (`enter` to save, `esc` to dismiss)
-- `e`: Edit existing task (`enter` to save, `esc` to dismiss)
-  - `tab`: Autocomplete suggested projects and contexts
-- `E`: Edit existing task, but place cursor at the end of the task text component 
-- `x`: Toggle task complete/incomplete
-- `X`: Complete and archive task immediately
-- `A`: Archive completed tasks to done.txt
-- `D`: Delete task
-- `P`: Postpone task (set due date tomorrow if task has existing due date)
-- `f`: Focus search field (`enter` to focus task list)
-- `r`: Reset search/Refresh task list
-- `u`: Open URL in focused task
-    - If task has multiple URLs, press `u` followed by a number to open the specific URL
-    - `U` Open all URLs in task
-- `SHIFT + [1-9]`: Display only tasks with priority A, B, C, D, E, F, G, H or I
-- `t`: Toggle visibility of tasks with threshold in future
-- `h`: Toggle visibility of hidden tasks
-- `q`: Quit application
+| Key | Action |
+|-----|--------|
+| `j` / `down` | Move cursor down |
+| `k` / `up` | Move cursor up |
+| `gg` | Go to top of list |
+| `G` | Go to bottom of list |
+| `n` | Add new task (`enter` to save, `esc` to dismiss) |
+| `e` | Edit existing task (`enter` to save, `esc` to dismiss) |
+| `tab` | Autocomplete suggested projects and contexts (during edit) |
+| `E` | Edit existing task, but place cursor at the end of the task text component |
+| `x` | Toggle task complete/incomplete |
+| `X` | Complete and archive task immediately |
+| `A` | Archive completed tasks to done.txt |
+| `D` | Delete task |
+| `P` | Postpone task (set due date tomorrow if task has existing due date) |
+| `f` | Focus search field (`enter` to focus task list) |
+| `r` | Reset search/Refresh task list |
+| `u` | Open URL in focused task |
+| `u` + number | Open specific URL when task has multiple URLs |
+| `U` | Open all URLs in task |
+| `SHIFT + [1-9]` | Display only tasks with priority A, B, C, D, E, F, G, H or I |
+| `t` | Toggle visibility of tasks with threshold in future |
+| `h` | Toggle visibility of hidden tasks |
+| `q` | Quit application |
 
 The application uses the [urwid](http://urwid.org/) library for the terminal interface and supports powerful features like natural language date parsing, task completion tracking, and auto-suggestions.
 
