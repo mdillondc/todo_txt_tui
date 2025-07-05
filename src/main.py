@@ -11,6 +11,19 @@ import asyncio
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+# Add parent directory to Python path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Import configuration
+from src.config.constants import (
+    __version__, __sync_refresh_rate__, __track_focused_task_interval__,
+    STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX, URLS_REGEX
+)
+from src.config.settings import PALETTE, COLORS, SETTINGS, setting_enabled
+
 
 def debug(text):
     with open("debug.txt", "a") as debug_file:
@@ -26,72 +39,10 @@ def is_valid_date(string):
         return False
 
 
-__version__ = '1.0.0'
-__sync_refresh_rate__ = 2
-__track_focused_task_interval__ = .1
+# Global state variables
 __current_search_query__ = ''
 __focused_task_index__ = ''
 __focused_task_text__ = ''
-
-# Default theme
-PALETTE = [
-    ('bold', 'bold', ''),
-    ('text', '', ''),  # Default to terminal
-    ('priority_a', 'light red', ''),
-    ('priority_b', 'brown', ''),
-    ('priority_c', 'light green', ''),
-    ('priority_d', 'light blue', ''),
-    ('priority_e', 'dark magenta', ''),
-    ('context', 'light magenta', ''),
-    ('project', 'yellow', ''),
-    ('is_complete', 'dark gray', ''),
-    ('is_danger', 'light red', ''),
-    ('is_success', 'light green', ''),
-    ('is_link', 'light blue', ''),
-    ('heading_overdue', 'light red,italics,bold', ''),
-    ('heading_today', 'light green,italics,bold', ''),
-    ('heading_future', 'default,italics,bold', ''),
-]
-
-COLORS = {
-    '(A)': 'priority_a',
-    '(B)': 'priority_b',
-    '(C)': 'priority_c',
-    '(D)': 'priority_d',
-    '(E)': 'priority_e',
-    '(F)': 'priority_f',
-    'due:': 'is_complete',
-    'rec:': 'is_complete',
-    '@': 'context',
-    '+': 'project',
-    'http': 'is_link',
-    'is_danger': 'is_danger',
-    'is_success': 'is_success',
-    'is_complete': 'is_complete',
-}
-
-# Default settings
-# ~/.config/todo-txt-tui/settings.conf
-SETTINGS = [
-    ('enableCompletionAndCreationDates', 'true'),
-    ('hideCompletionAndCreationDates', 'true'),
-    ('placeCursorBeforeMetadataWhenEditingTasks', 'false'),
-    ('displayHiddenTasksByDefault', 'false'),
-    ('hideTasksWithThresholdDates', 'true')
-]
-
-# Usage: `if setting_enabled('enableCompletionAndCreationDates'):`
-def setting_enabled(setting):
-    global SETTINGS
-    return any(item for item in SETTINGS if item[0] == setting and item[1].lower() == 'true')
-
-
-# Constants for regular expressions
-STRIP_X_FROM_TASK = r'^x\s'
-PRIORITY_REGEX = r'\(([A-Z])\)'
-DUE_DATE_REGEX = r'due:(\d{4}-\d{2}-\d{2})'
-RECURRENCE_REGEX = r'rec:([+]?[0-9]+[dwmy])'
-URLS_REGEX = r'(https?://[^\s\)]+|file://[^\s\)]+)'
 
 
 class CustomCheckBox(urwid.CheckBox):
@@ -1188,7 +1139,7 @@ class Body(urwid.ListBox):
         """
         global __focused_task_index__  # Ensure you're updating the global variable
         global __focused_task_text__
-        
+
         try:
             focused_widget = self.focus
             focused_position = self.focus_position
