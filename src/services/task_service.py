@@ -14,6 +14,7 @@ from src.config.constants import (
 )
 from src.config.settings import PALETTE, setting_enabled
 from src.utils.helpers import is_valid_date
+from src.ui.widgets import TaskUI, CustomCheckBox
 
 # TODO: TEMPORARY FIX - Global variables don't belong in service layer
 # These will be moved to proper location in Phase 5
@@ -492,10 +493,6 @@ class Tasks:
     # Performs a fuzzy search for tasks and updates the UI to display only matching tasks
     @staticmethod
     def search(edit_widget, search_query, txt_file, tasklist_instance):
-        # TODO: TEMPORARY FIX - Circular import workaround
-        # This import will be removed in Phase 4 when UI components are extracted
-        from src.main import TaskUI
-
         global __current_search_query__  # Use the global variable
         __current_search_query__ = search_query  # Update the current search query
 
@@ -607,9 +604,6 @@ class Tasks:
             focused_task_text = None
 
             # Use the original task text if available
-            # TODO: TEMPORARY FIX - Circular import workaround
-            # This import will be removed in Phase 4 when UI components are extracted
-            from src.main import CustomCheckBox
             if hasattr(focused_widget, 'original_widget') and isinstance(focused_widget.original_widget,
                                                                          CustomCheckBox):
                 focused_task_text = focused_widget.original_widget.original_text
