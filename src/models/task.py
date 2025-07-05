@@ -6,7 +6,6 @@ import re
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
-
 from src.utils.helpers import is_valid_date
 
 
@@ -233,7 +232,6 @@ class Task:
             hidden=self.hidden,
             raw_text=self.raw_text
         )
-
 
 def parse_task_string(task_string: str) -> Task:
     """

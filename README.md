@@ -37,7 +37,7 @@ Supports Linux and macOS. In theory, it should work on Windows, but this is unte
 Run the application directly by specifying the path to your todo.txt file:
 
 ```
-python core.py /path/to/todo.txt
+python src/main.py /path/to/todo.txt
 ```
 
 ### Command Line Arguments
@@ -45,15 +45,15 @@ python core.py /path/to/todo.txt
 The following command line arguments are supported:
 
 ```
-python todo_txt_tui/core.py --version  # Display version information
-python todo_txt_tui/core.py --help     # Display help information
+python src/main.py --version  # Display version information
+python src/main.py --help     # Display help information
 ```
 
 ### Quick Access
 
 Create an alias for quick access. Add this to your `.bashrc` or `.zshrc`, e.g.:
 ```
-alias todo="~/miniconda3/envs/todo/bin/python ~/path/to/core.py ~/path/to/todo.txt"
+alias todo="~/miniconda3/envs/todo/bin/python ~/path/to/src/main.py ~/path/to/todo.txt"
 ```
 
 The application requires an existing todo.txt file. If the specified file doesn't exist, the application will display an error message and exit.

@@ -41,7 +41,6 @@ COLORS = {
 }
 
 # Default settings
-# ~/.config/todo-txt-tui/settings.conf
 SETTINGS = [
     ('enableCompletionAndCreationDates', 'true'),
     ('hideCompletionAndCreationDates', 'true'),

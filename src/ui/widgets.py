@@ -1,13 +1,8 @@
 import urwid
 import re
 from datetime import datetime
-
-# Import configuration and utilities
 from src.config.settings import COLORS, setting_enabled
 from src.utils.helpers import is_valid_date
-
-
-# Global variable imports resolved - no longer using local imports
 
 
 class CustomCheckBox(urwid.CheckBox):

@@ -4,17 +4,10 @@ UI components for todo.txt TUI application.
 
 import urwid
 import re
-import sys
-import os
 import subprocess
 import platform
-import json
-import aiohttp
-import threading
-import asyncio
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
-
 from src.config.constants import (
     STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX, URLS_REGEX,
     __track_focused_task_interval__
@@ -354,34 +347,6 @@ class Body(urwid.ListBox):
             # If there are tasks, focus on the first task using focus_on_specific_task
             if len(self.body) > 1:
                 self.focus_on_specific_task(1)
-
-        # Quickly set priority on focused task
-        #if key in key_mapping_set_priority:
-        #    focused_widget = self.focus
-        #    if hasattr(focused_widget, 'original_widget') and isinstance(focused_widget.original_widget,
-        #                                                                 CustomCheckBox):
-        #        original_task_text = focused_widget.original_widget.original_text
-        #
-        #        if key_mapping_set_priority[key] is not None:
-        #            # Add or modify the priority
-        #            new_task_text = re.sub(PRIORITY_REGEX + r'\s*', '', original_task_text).strip() + " " + \
-        #                            key_mapping_set_priority[key]
-        #        else:
-        #            # Remove the priority
-        #            new_task_text = re.sub(PRIORITY_REGEX + r'\s*', '', original_task_text).strip()
-        #
-        #        # Edit the task and get the updated task text
-        #        updated_task_text = self.tasks.edit(original_task_text, new_task_text)
-        #
-        #        # Refresh the displayed tasks
-        #        self.refresh_displayed_tasks()
-        #
-        #        # Refocus using the updated task text
-        #        for idx, widget in enumerate(self.body):
-        #            if hasattr(widget, 'original_widget') and isinstance(widget.original_widget, CustomCheckBox):
-        #                if widget.original_widget.original_text == updated_task_text:
-        #                    self.set_focus(idx)
-        #                    break
 
         # Toggle 'hideTasksWithThresholdDates' setting and refresh display
         elif key == 't':

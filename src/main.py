@@ -1,36 +1,19 @@
 import urwid
-import re
 import sys
 import os
-import subprocess
-import platform
-import json
-import aiohttp
-import threading
-import asyncio
-from datetime import date, datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from typing import Optional
 
-# Add parent directory to Python path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-# Import configuration
 from src.config.constants import (
-    __version__, __sync_refresh_rate__, __track_focused_task_interval__,
-    STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX, URLS_REGEX
+    __version__, __sync_refresh_rate__, __track_focused_task_interval__
 )
-from src.config.settings import PALETTE, COLORS, SETTINGS, setting_enabled
-from src.utils.helpers import debug, is_valid_date
+from src.config.settings import PALETTE
 from src.services.task_service import Tasks
-from src.ui.widgets import CustomCheckBox, TaskUI
-from src.services.auto_suggestions import AutoSuggestions
 from src.ui.components import Body, Search
-
-
-
 
 
 # Global state variables
@@ -38,55 +21,63 @@ __current_search_query__ = ''
 __focused_task_index__ = ''
 __focused_task_text__ = ''
 
-
-
-
-
-
-
-
-
-
-
-def main():
+def handle_command_line_args() -> Optional[str]:
     """
-    Init. and run the actual application
-    """
+    Handle command line arguments and return the todo file path.
 
-    # Check if there are command-line arguments
+    Returns:
+        The path to the todo.txt file, or None if application should exit.
+    """
     if len(sys.argv) > 1:
         if sys.argv[1] == '--version':
             print(f"Version: {__version__}")
-            return
+            return None
         elif sys.argv[1] == '--help':
             print("Help (keybindings, features, etc): https://github.com/mdillondc/todo_txt_tui")
-            return
+            return None
 
-    # Check if a file path for the todo.txt file is provided as a command-line argument
     if len(sys.argv) < 2:
         print("Please provide the path to the todo.txt file.")
-        return
+        return None
 
-    # Store the path to the todo.txt file
-    txt_file = sys.argv[1]
+    return sys.argv[1]
 
-    # Check if the file actually exists
+def validate_file_path(txt_file: str) -> bool:
+    """
+    Validate that the todo.txt file exists.
+
+    Args:
+        txt_file: Path to the todo.txt file
+
+    Returns:
+        True if file exists, False otherwise
+    """
     if not os.path.exists(txt_file):
         print(f"The file '{txt_file}' does not exist. Are you sure you specified the correct path?")
-        return
+        return False
+    return True
 
+def setup_ui_components(txt_file: str) -> tuple[Body, urwid.Frame]:
+    """
+    Set up the UI components for the application.
+
+    Args:
+        txt_file: Path to the todo.txt file
+
+    Returns:
+        Tuple of (tasklist, main_frame)
+    """
     # Initialize Body as ListBox to serve as layout for tasks and handle tasks related keybindings
     tasklist = Body(txt_file)
-    tasklist_decorations = urwid.LineBox(tasklist,
-                                         title="Tasks")  # Wrap the Body ListBox in a border and add a title
-    tasklist.tasklist_decorations = tasklist_decorations  # Store the tasklist layout back into tasklist for future reference and state management
+    tasklist_decorations = urwid.LineBox(tasklist, title="Tasks")
+    tasklist.tasklist_decorations = tasklist_decorations  # type: ignore
 
     # Use Search instead of urwid.Edit for search field
-    # Had to use Search instead of a direct urwid.Edit to make general_input work. No idea why.
-    search = Search(tasklist_instance=tasklist,
-                    caption="Search: ")  # Give the search field an inline title to make its function obviou
-    search_decorations = urwid.LineBox(search)  # Wrap the search field in a border (LineBox)
-    urwid.connect_signal(  # Filter tasklist based on search query when the text in the search field changes
+    search = Search(tasklist_instance=tasklist, caption="Search: ")
+    search_decorations = urwid.LineBox(search)
+
+    # Connect search functionality
+    urwid.connect_signal(
         search,
         'change',
         lambda edit_widget, search_query: Tasks.search(
@@ -95,36 +86,83 @@ def main():
     )
 
     # Create a Frame to contain the search field and the tasklist
-    tasklist.main_frame = urwid.Frame(tasklist_decorations, header=search_decorations)
+    main_frame = urwid.Frame(tasklist_decorations, header=search_decorations)
+    tasklist.main_frame = main_frame  # type: ignore
 
+    return tasklist, main_frame
+
+def initialize_application(txt_file: str, tasklist: Body, main_frame: urwid.Frame) -> tuple[Tasks, urwid.MainLoop, list[Optional[float]]]:
+    """
+    Initialize the application components.
+
+    Args:
+        txt_file: Path to the todo.txt file
+        tasklist: The main tasklist Body widget
+        main_frame: The main UI frame
+
+    Returns:
+        Tuple of (tasks, loop, last_mod_time)
+    """
     # Initialize Tasks to handle task manipulation
     tasks = Tasks(txt_file)
     tasks.normalize_file(tasklist)
 
     # Initialize the MainLoop
-    tasklist.loop = urwid.MainLoop(tasklist.main_frame, palette=PALETTE, handle_mouse=False)
+    loop = urwid.MainLoop(main_frame, palette=PALETTE, handle_mouse=False)
+    tasklist.loop = loop  # type: ignore
 
     # Prepare to update the tasklist if the todo.txt file has changed outside the application
-    try:  # Check and store the last modification time of the todo.txt file
-        last_mod_time = [os.path.getmtime(txt_file)]  # Note the list
+    try:
+        last_mod_time = [os.path.getmtime(txt_file)]
     except FileNotFoundError:
-        last_mod_time = [None]  # Note the list
+        last_mod_time = [None]
 
+    return tasks, loop, last_mod_time
+
+def run_application(tasks: Tasks, loop: urwid.MainLoop, txt_file: str, tasklist: Body, last_mod_time: list[Optional[float]]) -> None:
+    """
+    Run the main application loop with periodic updates.
+
+    Args:
+        tasks: Tasks instance for file operations
+        loop: Urwid main loop
+        txt_file: Path to the todo.txt file
+        tasklist: The main tasklist Body widget
+        last_mod_time: List containing last modification time of the file
+    """
     # Set an alarm to check for file changes every 5 seconds
-    tasklist.loop.set_alarm_in(__sync_refresh_rate__, tasks.sync, (txt_file, tasklist, last_mod_time))
+    loop.set_alarm_in(__sync_refresh_rate__, tasks.sync, (txt_file, tasklist, last_mod_time))
 
     # Set an alarm to update focused task index every 1 second
-    tasklist.loop.set_alarm_in(__track_focused_task_interval__, tasklist.track_focused_task)
+    loop.set_alarm_in(__track_focused_task_interval__, tasklist.track_focused_task)
 
     # Start the MainLoop to display the application
-    tasklist.loop.run()
+    loop.run()
 
+def main() -> None:
+    """
+    Initialize and run the todo.txt TUI application.
+    """
+    # Handle command line arguments
+    txt_file = handle_command_line_args()
+    if txt_file is None:
+        return
 
-# Start the application
+    # Validate file path
+    if not validate_file_path(txt_file):
+        return
+
+    # Set up UI components
+    tasklist, main_frame = setup_ui_components(txt_file)
+
+    # Initialize application
+    tasks, loop, last_mod_time = initialize_application(txt_file, tasklist, main_frame)
+
+    # Run the application
+    run_application(tasks, loop, txt_file, tasklist, last_mod_time)
+
 if __name__ == '__main__':
     main()
 
 
-# Needed to build for pypi because use of for main function await
-def entry_point():
-    main()
+

@@ -7,7 +7,6 @@ import re
 import urwid
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-
 from src.config.constants import (
     PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX,
     __sync_refresh_rate__
