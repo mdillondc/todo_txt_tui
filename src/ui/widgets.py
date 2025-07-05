@@ -7,9 +7,7 @@ from src.config.settings import COLORS, setting_enabled
 from src.utils.helpers import is_valid_date
 
 
-# TODO: TEMPORARY FIX - Global variable imports
-# These will be properly handled in Phase 5 when globals are reorganized
-# Using local imports to avoid circular dependency
+# Global variable imports resolved - no longer using local imports
 
 
 class CustomCheckBox(urwid.CheckBox):
@@ -51,13 +49,14 @@ class TaskUI:
 
     # Display the list of tasks inside the "Tasks" area
     @staticmethod
-    def render_and_display_tasks(tasks, palette):
+    def render_and_display_tasks(tasks, palette, current_search_query=''):
         """
         Renders and displays tasks in the terminal UI.
 
         Parameters:
         tasks (list)
         palette (dict): A dictionary that maps color names to terminal colors.
+        current_search_query (str): Current search query for filtering tasks.
 
         Returns:
         urwid.Pile: A urwid Pile widget containing the rendered tasks.
@@ -77,9 +76,7 @@ class TaskUI:
         for task in tasks:
 
             # Skip tasks that don't match the current search query
-            # TODO: TEMPORARY FIX - Local import to avoid circular dependency
-            import src.main as main_module
-            if main_module.__current_search_query__ and main_module.__current_search_query__.lower() not in task['text'].lower():
+            if current_search_query and current_search_query.lower() not in task['text'].lower():
                 continue
 
             # Check for hidden tasks based on the setting
@@ -216,7 +213,7 @@ class TaskUI:
         return urwid.Pile(widgets)
 
     @staticmethod
-    def open_task_add_edit_dialog(keymap_instance, title, default_text=None, place_cursor_at_end=True):
+    def open_task_add_edit_dialog(keymap_instance, title, default_text=None, place_cursor_at_end=True, focused_task_index=None):
         """
         Opens a dialog for adding or editing a task.
 
@@ -227,9 +224,7 @@ class TaskUI:
         place_cursor_at_end: Flag to determine where to place the cursor.
                              If True, place at the end of the entire task.
                              If False, place at the end of the task text component.
-
-        Returns:
-        None: This function updates the UI but does not return a value.
+        focused_task_index: Index of the currently focused task.
         """
 
         # Initialize Tasks instance
@@ -244,9 +239,7 @@ class TaskUI:
             if default_text:  # Edit existing task
                 tasks.edit(default_text, text)
                 keymap_instance.refresh_displayed_tasks()
-                # TODO: TEMPORARY FIX - Local import to avoid circular dependency
-                import src.main as main_module
-                keymap_instance.focus_on_specific_task(main_module.__focused_task_index__)
+                keymap_instance.focus_on_specific_task(focused_task_index)
             else:  # Add a new task
                 if setting_enabled('enableCompletionAndCreationDates'):
                     text = datetime.now().strftime('%Y-%m-%d') + ' ' + text

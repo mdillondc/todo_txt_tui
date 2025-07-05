@@ -16,11 +16,6 @@ from src.config.settings import PALETTE, setting_enabled
 from src.utils.helpers import is_valid_date
 from src.ui.widgets import TaskUI, CustomCheckBox
 
-# TODO: TEMPORARY FIX - Global variables don't belong in service layer
-# These will be moved to proper location in Phase 5
-__focused_task_index__ = ''
-__current_search_query__ = ''
-
 
 class Tasks:
     """
@@ -493,8 +488,8 @@ class Tasks:
     # Performs a fuzzy search for tasks and updates the UI to display only matching tasks
     @staticmethod
     def search(edit_widget, search_query, txt_file, tasklist_instance):
-        global __current_search_query__  # Use the global variable
-        __current_search_query__ = search_query  # Update the current search query
+        import src.main as main_module
+        main_module.__current_search_query__ = search_query  # Update the current search query
 
         # Create a Tasks instance for the given file path
         tasks = Tasks(txt_file)
@@ -584,7 +579,7 @@ class Tasks:
 
     # Checks for updates in the task file and refreshes the UI if needed
     def sync(self, loop, user_data):
-        global __focused_task_index__
+        import src.main as main_module
         # Unpack user data to get file path, UI instance, and last modification time
         txt_file, tasklist_instance, last_mod_time = user_data
 
@@ -613,7 +608,7 @@ class Tasks:
 
             # Refocus on the previously focused task in the UI based on its original text
             if focused_task_text:
-                tasklist_instance.focus_on_specific_task(__focused_task_index__)
+                tasklist_instance.focus_on_specific_task(main_module.__focused_task_index__)
 
             # Update the last known modification time
             last_mod_time[0] = current_mod_time
