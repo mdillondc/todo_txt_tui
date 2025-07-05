@@ -22,6 +22,7 @@
 ✅ **Test at every checkpoint** to confirm functionality intact  
 ✅ **Update entry point**: `python src/main.py` (moved from todo_txt_tui/core.py)
 ✅ **Incremental refactoring** - app works at every step  
+✅ **Track temporary fixes** - Document all workarounds for later cleanup
 
 ## Progress Tracking
 
@@ -38,6 +39,30 @@
 4. Run ALL testing steps for the phase
 5. Mark phase status as ✅ Complete only after ALL tests pass
 6. Move to next phase
+
+## Temporary Fixes Protocol
+
+**MANDATORY for all phases**: When temporary workarounds are needed:
+
+1. **Mark in Code**: Add `TODO: TEMPORARY FIX - [reason]` comments
+2. **Document in TODO**: Add "⚠️ Temporary Fixes Applied" section to the phase
+3. **Explain Why**: Document why the fix is temporary and when it will be resolved
+4. **Track Resolution**: Note which future phase will address the workaround
+
+**Example**:
+```python
+# TODO: TEMPORARY FIX - Circular import workaround
+# This import will be removed in Phase 4 when UI components are extracted
+from src.main import CustomCheckBox
+```
+
+**In REFACTORING_TODO.md**:
+```markdown
+### ⚠️ Temporary Fixes Applied (To Be Resolved in Later Phases)
+- **Description**: What was done temporarily
+- **Reason**: Why it was necessary
+- **Resolution**: Which phase will fix it
+```
 
 ## Target Structure
 
@@ -80,6 +105,8 @@ todo_txt_tui_code/
 
 **Checkpoint**: Test that `python src/main.py /path/to/todo.txt` works identically
 
+**Temporary Fixes**: Document any workarounds needed for imports or dependencies
+
 ### Phase 2: Extract Utility Functions
 **Goal**: Move standalone helper functions
 
@@ -89,6 +116,8 @@ todo_txt_tui_code/
 - Update imports in `main.py`
 
 **Checkpoint**: Test all utility functions work (debug logging, date validation, settings)
+
+**Temporary Fixes**: Document any workarounds needed for function dependencies
 
 ### Phase 3: Extract Task Model & Logic
 **Goal**: Separate task data operations from UI
@@ -101,6 +130,8 @@ todo_txt_tui_code/
 
 **Checkpoint**: Test all task operations (add, edit, delete, complete, search, file sync)
 
+**Temporary Fixes**: Document any circular imports or global variable workarounds
+
 ### Phase 4: Extract UI Components
 **Goal**: Organize UI components separately
 
@@ -108,8 +139,11 @@ todo_txt_tui_code/
 - Create `ui/` module
 - Move `CustomCheckBox`, `TaskUI` to `ui/widgets.py`
 - Update imports in `main.py`
+- **RESOLVE**: Phase 3 circular import workarounds for UI components
 
 **Checkpoint**: Test UI rendering, task display, checkbox interactions
+
+**Temporary Fixes**: Document any remaining UI-related workarounds
 
 ### Phase 5: Extract Remaining Classes
 **Goal**: Move remaining large classes
@@ -118,8 +152,12 @@ todo_txt_tui_code/
 - Move `AutoSuggestions` to `services/auto_suggestions.py`
 - Move `Body`, `Search` to `ui/components.py`
 - Update imports in `main.py`
+- **RESOLVE**: Phase 3 global variable placement issues
+- **RESOLVE**: Any remaining circular imports or workarounds
 
 **Checkpoint**: Test all features (auto-suggestions, keybindings, search functionality)
+
+**Temporary Fixes**: Document any final workarounds before Phase 6 cleanup
 
 ### Phase 6: Clean up `main.py`
 **Goal**: Make main.py a thin orchestrator
@@ -129,8 +167,12 @@ todo_txt_tui_code/
 - Add type hints where beneficial
 - Remove any remaining global state
 - Ensure `main.py` is clean and focused
+- **RESOLVE**: All remaining temporary fixes from previous phases
+- **VERIFY**: No TODO: TEMPORARY FIX comments remain in codebase
 
 **Checkpoint**: Final comprehensive functionality test
+
+**Temporary Fixes**: Phase 6 should resolve ALL temporary fixes - none should remain
 
 ### Phase 0: Rename Directory Structure
 **Goal**: Move from todo_txt_tui/ to src/ directory structure
