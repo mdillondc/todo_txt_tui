@@ -23,20 +23,10 @@ from src.config.constants import (
     STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX, URLS_REGEX
 )
 from src.config.settings import PALETTE, COLORS, SETTINGS, setting_enabled
+from src.utils.helpers import debug, is_valid_date
 
 
-def debug(text):
-    with open("debug.txt", "a") as debug_file:
-        debug_file.write(f"{text}\n")
 
-
-# Helper
-def is_valid_date(string):
-    try:
-        datetime.strptime(string, '%Y-%m-%d')
-        return True
-    except ValueError:
-        return False
 
 
 # Global state variables
