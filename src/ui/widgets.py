@@ -171,7 +171,10 @@ class TaskUI:
                         color = 'is_link'
                         if should_count_links:
                             link_counter += 1
-                            word = f"{word}({link_counter})"
+                            display_text.append((color, word))
+                            display_text.append(('is_link', f' [{link_counter}]'))
+                            display_text.append(('text', ' '))
+                            continue
                     elif any(word.startswith(keyword) for keyword in COLORS):
                         color = COLORS.get(word[:4], 'text')
                     elif is_valid_date(word):
@@ -185,7 +188,10 @@ class TaskUI:
                         color = 'is_link'
                     if should_count_links:
                         link_counter += 1
-                        word = f"{text}({link_counter})"
+                        display_text.append((color, text))
+                        display_text.append(('is_link', f' [{link_counter}]'))
+                        display_text.append(('text', ' '))
+                        continue
                     else:
                         word = text  # If only one link, no need for a counter
 
