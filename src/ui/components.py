@@ -348,6 +348,24 @@ class Body(urwid.ListBox):
             if len(self.body) > 1:
                 self.focus_on_specific_task(1)
 
+        # Quickly filter by due date using ALT+[1-9]
+        if isinstance(key, str) and key.startswith('meta '):
+            meta_key = key.split(' ', 1)[1]
+            if meta_key in [str(i) for i in range(1, 10)]:
+                offset = int(meta_key) - 1
+                target_date = date.today() + timedelta(days=offset)
+                filter_text = f"due:{target_date.strftime('%Y-%m-%d')}"
+                # Set focus to the search bar
+                self.main_frame.focus_position = 'header'
+                search_widget = self.main_frame.contents['header'][0].original_widget
+                # Replace content of the search bar and insert the due filter
+                search_widget.set_edit_text(filter_text)
+                # Switch focus back to the body
+                self.main_frame.focus_position = 'body'
+                # If there are tasks, focus on the first task
+                if len(self.body) > 1:
+                    self.focus_on_specific_task(1)
+
         # Toggle 'hideTasksWithThresholdDates' setting and refresh display
         elif key == 't':
             global SETTINGS

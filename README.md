@@ -98,6 +98,7 @@ The application requires an existing todo.txt file. If the specified file doesn'
 | `u` + number | Open specific URL when task has multiple URLs |
 | `U` | Open all URLs in task |
 | `SHIFT + [1-9]` | Display only tasks with priority A, B, C, D, E, F, G, H or I |
+| `ALT + [1-9]` | Filter tasks due on a specific day: ALT+1 today, ALT+2 tomorrow, ... ALT+9 today+8 |
 | `t` | Toggle visibility of tasks with threshold in future |
 | `h` | Toggle visibility of hidden tasks |
 | `q` | Quit application |
