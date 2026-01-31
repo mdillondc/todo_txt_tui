@@ -4,12 +4,13 @@ UI components for todo.txt TUI application.
 
 import urwid
 import re
+import os
 import subprocess
 import platform
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from src.config.constants import (
-    STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX, URLS_REGEX,
+    STRIP_X_FROM_TASK, PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX,
     __track_focused_task_interval__
 )
 from src.config.settings import PALETTE, COLORS, SETTINGS, setting_enabled
@@ -44,6 +45,9 @@ class Body(urwid.ListBox):
         self.last_key = None
         self.last_key_time = None
 
+        # Determine the OS type for URL opening
+        self.os_type = platform.system()
+
         # Another Tasks object to help with initialization
         tasks = Tasks(txt_file)
 
@@ -64,6 +68,63 @@ class Body(urwid.ListBox):
                 new_value = 'false' if current_value else 'true'
                 SETTINGS[i] = ('displayHiddenTasksByDefault', new_value)
                 break
+
+    def open_url_or_terminal(self, url):
+        """
+        Opens a URL in browser or executes a terminal command based on prefix.
+        term: prefix opens Ghostty with the command, otherwise uses xdg-open.
+        """
+        if url.startswith('term:'):
+            command = url[5:].strip()  # Remove 'term:' prefix
+            shell = os.environ.get('SHELL', 'zsh')
+            if command:
+                shell_cmd = f"{command}; exec {shell} -i"
+            else:
+                shell_cmd = f"exec {shell} -i"
+
+            subprocess.Popen(
+                ['ghostty', '-e', shell, '-ic', shell_cmd],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        else:
+            if self.os_type == 'Linux':
+                subprocess.Popen(
+                    ['xdg-open', url],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+            elif self.os_type == 'Windows':
+                subprocess.run(['start', url], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            elif self.os_type == 'Darwin':
+                subprocess.run(['open', url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    def extract_task_links(self, task_line):
+        """Extracts markdown link destinations and plain URLs from a task line."""
+
+        if not task_line:
+            return []
+
+        # Markdown: [text](destination) - allow spaces in destination; stop at first ')'
+        md_matches = list(re.finditer(r'\[([^\]]*?)\]\(([^)]*?)\)', task_line))
+        links = []
+
+        for m in md_matches:
+            dest = m.group(2).strip()
+            if dest:
+                links.append(dest)
+
+        # Strip markdown links before scanning for plain URLs (avoid double-counting).
+        stripped_line = task_line
+        for m in reversed(md_matches):
+            stripped_line = stripped_line[:m.start()] + ' ' + stripped_line[m.end():]
+
+        plain_links = re.findall(r'(https?://[^\s\)]+|file://[^\s\)]+|term:[^\s\)]+)', stripped_line)
+        links.extend(plain_links)
+
+        return links
 
     def refresh_displayed_tasks(self):
         # Refresh the displayed tasks by reading and sorting tasks again
@@ -165,8 +226,6 @@ class Body(urwid.ListBox):
         #    '=': None
         #}
 
-        # Determine the OS type for URL opening
-        os_type = platform.system()
         # Get the current time for detecting rapid keypresses
         current_time = datetime.now()
 
@@ -286,15 +345,9 @@ class Body(urwid.ListBox):
                                                                          urwid.CheckBox):
                 task_text_display = focused_widget.original_widget.get_label().strip()
                 original_task_line = focused_widget.original_widget.original_text
-                urls = re.findall(URLS_REGEX, original_task_line)
+                urls = self.extract_task_links(original_task_line)
                 if len(urls) == 1:
-                    if os_type == 'Linux':
-                        subprocess.run(['xdg-open', urls[0]], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-                    elif os_type == 'Windows':
-                        subprocess.run(['start', urls[0]], shell=True, stdout=subprocess.DEVNULL,
-                                       stderr=subprocess.STDOUT)
-                    elif os_type == 'Darwin':
-                        subprocess.run(['open', urls[0]], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                    self.open_url_or_terminal(urls[0])
                 elif len(urls) > 1:
                     self.pending_url_choice = urls
 
@@ -302,15 +355,7 @@ class Body(urwid.ListBox):
         elif key in map(str, range(1, 10)) and self.pending_url_choice:
             index = int(key) - 1
             if index < len(self.pending_url_choice):
-                if os_type == 'Linux':
-                    subprocess.run(['xdg-open', self.pending_url_choice[index]], stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.STDOUT)
-                elif os_type == 'Windows':
-                    subprocess.run(['start', self.pending_url_choice[index]], shell=True, stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.STDOUT)
-                elif os_type == 'Darwin':
-                    subprocess.run(['open', self.pending_url_choice[index]], stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.STDOUT)
+                self.open_url_or_terminal(self.pending_url_choice[index])
             self.pending_url_choice = None
 
         # Open all URLs of the currently focused task
@@ -320,14 +365,9 @@ class Body(urwid.ListBox):
                                                                          urwid.CheckBox):
                 task_text_display = focused_widget.original_widget.get_label().strip()
                 original_task_line = focused_widget.original_widget.original_text
-                urls = re.findall(URLS_REGEX, original_task_line)
+                urls = self.extract_task_links(original_task_line)
                 for url in urls:
-                    if os_type == 'Linux':
-                        subprocess.run(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-                    elif os_type == 'Windows':
-                        subprocess.run(['start', url], shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-                    elif os_type == 'Darwin':
-                        subprocess.run(['open', url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                    self.open_url_or_terminal(url)
 
         # Toggle 'displayHiddenTasksByDefault' setting
         elif key == 'h':

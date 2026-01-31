@@ -114,4 +114,16 @@ Hello [world](https://example.com)
 Another task https://example.com
 ```
 
+### Terminal links (term:)
+
+TodoTxtTUI also supports running terminal commands from Markdown links by using the `term:` scheme.
+
+Example:
+
+```
+[hello world](term:echo "hello world")
+```
+
+When opening links (see keybindings), `term:` links open a new terminal window and execute the command there (leaving the shell open afterwards). Regular `http(s)://` and `file://` links still open normally in the default browser.
+
 See [Keybindings](https://github.com/mdillondc/todo_txt_tui/tree/main#keybindings) for how to open links.

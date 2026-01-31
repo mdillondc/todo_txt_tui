@@ -124,15 +124,17 @@ class TaskUI:
             is_task_complete = task['completed']  # Determine if the task is complete
             display_text = []
 
-            # Handle Markdown links and replace them with placeholders
-            md_links = re.findall(r'\[(.*?)\]\((https?://\S+|file://\S+)\)', task_line)
+            # Handle Markdown links and replace them with placeholders.
+            # Note: we allow spaces in the destination for custom schemes like
+            # [label](term:some command with args)
+            md_matches = list(re.finditer(r'\[([^\]]*?)\]\(([^)]*?)\)', task_line))
+            md_links = [(m.group(1), m.group(2)) for m in md_matches]
             total_md_links = len(md_links)
-            for i, (text, url) in enumerate(md_links):
-                placeholder = f"MDLINK{i}"
-                task_line = task_line.replace(f"[{text}]({url})", placeholder)
+            for i, m in reversed(list(enumerate(md_matches))):
+                task_line = task_line[:m.start()] + f"MDLINK{i}" + task_line[m.end():]
 
             # Count the number of plain text links
-            total_plain_links = len(re.findall(r'(https?://\S+|file://\S+)', task_line))
+            total_plain_links = len(re.findall(r'(https?://\S+|file://\S+|term:\S+)', task_line))
 
             # Decide if we should count links based on the total number of Markdown and plain text links
             should_count_links = (total_md_links + total_plain_links) > 1
@@ -167,7 +169,7 @@ class TaskUI:
                         color = 'project'
                     elif word in COLORS:
                         color = COLORS[word]
-                    elif re.match(r'(https?://\S+|file://\S+)', word):
+                    elif re.match(r'(https?://\S+|file://\S+|term:\S+)', word):
                         color = 'is_link'
                         if should_count_links:
                             link_counter += 1
