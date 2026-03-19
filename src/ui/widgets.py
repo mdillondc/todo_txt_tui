@@ -13,7 +13,7 @@ class CustomCheckBox(urwid.CheckBox):
     the original text for operations like edit, complete, delete, etc.
     """
 
-    def __init__(self, label, state=False, original_text=''):
+    def __init__(self, label, state=False, original_text=""):
         """
         Initialize a new CustomCheckBox instance.
 
@@ -32,7 +32,7 @@ class CustomCheckBox(urwid.CheckBox):
         self.original_text = original_text
 
     def keypress(self, size, key):
-        if key in ('enter', ' '):  # Don't allow space and enter to toggle checkboxes
+        if key in ("enter", " "):  # Don't allow space and enter to toggle checkboxes
             return key
         return super().keypress(size, key)  # For other keys, call the superclass method
 
@@ -44,7 +44,7 @@ class TaskUI:
 
     # Display the list of tasks inside the "Tasks" area
     @staticmethod
-    def render_and_display_tasks(tasks, palette, current_search_query=''):
+    def render_and_display_tasks(tasks, palette, current_search_query=""):
         """
         Renders and displays tasks in the terminal UI.
 
@@ -61,7 +61,7 @@ class TaskUI:
         widgets = []
 
         # Initialize variables to keep track of the current due date section and whether it's the first heading
-        current_due_date = ''
+        current_due_date = ""
         first_heading = True
 
         # Get today's date for comparison with task due dates
@@ -69,72 +69,86 @@ class TaskUI:
 
         # Loop through each task
         for task in tasks:
-
             # Skip tasks that don't match the current search query
-            if current_search_query and current_search_query.lower() not in task['text'].lower():
+            if (
+                current_search_query
+                and current_search_query.lower() not in task["text"].lower()
+            ):
                 continue
 
             # Check for hidden tasks based on the setting
-            if 'h:1' in task['text'] and not setting_enabled('displayHiddenTasksByDefault'):
+            if "h:1" in task["text"] and not setting_enabled(
+                "displayHiddenTasksByDefault"
+            ):
                 continue
 
             # Check for hideTasksWithThresholdDates setting
-            if setting_enabled('hideTasksWithThresholdDates'):
-                threshold_date_match = re.search(r't:(\d{4}-\d{2}-\d{2})', task['text'])
+            if setting_enabled("hideTasksWithThresholdDates"):
+                threshold_date_match = re.search(r"t:(\d{4}-\d{2}-\d{2})", task["text"])
                 if threshold_date_match:
                     threshold_date_str = threshold_date_match.group(1)
-                    threshold_date = datetime.strptime(threshold_date_str, '%Y-%m-%d').date()
+                    threshold_date = datetime.strptime(
+                        threshold_date_str, "%Y-%m-%d"
+                    ).date()
                     # Skip task if threshold date is in the future
                     if threshold_date > today:
                         continue
 
             # Extract the due date from the current task
-            due_date = task['due_date']
+            due_date = task["due_date"]
 
             # Check if we're entering a new due date section
             if due_date != current_due_date:
                 current_due_date = due_date
-                due_date_obj = datetime.strptime(due_date, '%Y-%m-%d') if due_date else None
+                due_date_obj = (
+                    datetime.strptime(due_date, "%Y-%m-%d") if due_date else None
+                )
 
                 # Create section heading based on due date
                 if due_date_obj:
                     day_name = due_date_obj.strftime("%A")
                     heading_str = f"{due_date}: {day_name}"
                 else:
-                    heading_str = 'No due date'
+                    heading_str = "No due date"
 
                 # Color the heading based on its relation to today's date
                 if due_date_obj and due_date_obj.date() < today:
-                    heading_text = urwid.Text(('heading_overdue', heading_str + ' (Overdue)'))
+                    heading_text = urwid.Text(
+                        ("heading_overdue", heading_str + " (Overdue)")
+                    )
                 elif due_date_obj and due_date_obj.date() == today:
-                    heading_text = urwid.Text(('heading_today', heading_str + ' (Today)'))
+                    heading_text = urwid.Text(
+                        ("heading_today", heading_str + " (Today)")
+                    )
                 else:
-                    heading_text = urwid.Text(('heading_future', heading_str))
+                    heading_text = urwid.Text(("heading_future", heading_str))
 
                 # Add a divider between sections (skipped for the first heading)
                 if not first_heading:
-                    widgets.append(urwid.Divider(' '))
+                    widgets.append(urwid.Divider(" "))
 
                 # Add the heading to the list of widgets
                 widgets.append(heading_text)
                 first_heading = False
 
             # Prepare the task line for display
-            task_line = task['text'].strip()
-            is_task_complete = task['completed']  # Determine if the task is complete
+            task_line = task["text"].strip()
+            is_task_complete = task["completed"]  # Determine if the task is complete
             display_text = []
 
             # Handle Markdown links and replace them with placeholders.
             # Note: we allow spaces in the destination for custom schemes like
             # [label](term:some command with args)
-            md_matches = list(re.finditer(r'\[([^\]]*?)\]\(([^)]*?)\)', task_line))
+            md_matches = list(re.finditer(r"\[([^\]]*?)\]\(([^)]*?)\)", task_line))
             md_links = [(m.group(1), m.group(2)) for m in md_matches]
             total_md_links = len(md_links)
             for i, m in reversed(list(enumerate(md_matches))):
-                task_line = task_line[:m.start()] + f"MDLINK{i}" + task_line[m.end():]
+                task_line = task_line[: m.start()] + f"MDLINK{i}" + task_line[m.end() :]
 
             # Count the number of plain text links
-            total_plain_links = len(re.findall(r'(https?://\S+|file://\S+|term:\S+)', task_line))
+            total_plain_links = len(
+                re.findall(r"(https?://\S+|file://\S+|term:\S+)", task_line)
+            )
 
             # Decide if we should count links based on the total number of Markdown and plain text links
             should_count_links = (total_md_links + total_plain_links) > 1
@@ -145,9 +159,9 @@ class TaskUI:
 
             # Loop through each word to apply color-coding logic
             for index, word in enumerate(task_words):
-                color = 'is_complete' if is_task_complete else 'text'
+                color = "is_complete" if is_task_complete else "text"
 
-                if setting_enabled('hideCompletionAndCreationDates'):
+                if setting_enabled("hideCompletionAndCreationDates"):
                     if index == 0 and is_valid_date(word):
                         continue
 
@@ -159,55 +173,61 @@ class TaskUI:
 
                 # Apply color-coding based on the word's prefix or content
                 if not is_task_complete:
-                    if word == 'h:1':
-                        color = 'is_complete'
-                    elif word.startswith('t:'):
-                        color = 'is_complete'
-                    elif word.startswith('@'):
-                        color = 'context'
-                    elif word.startswith('+'):
-                        color = 'project'
+                    if word == "h:1":
+                        color = "is_complete"
+                    elif word.startswith("t:"):
+                        color = "is_complete"
+                    elif word.startswith("@"):
+                        color = "context"
+                    elif word.startswith("+"):
+                        color = "project"
                     elif word in COLORS:
                         color = COLORS[word]
-                    elif re.match(r'(https?://\S+|file://\S+|term:\S+)', word):
-                        color = 'is_link'
+                    elif re.match(r"(https?://\S+|file://\S+|term:\S+)", word):
+                        color = "is_link"
                         if should_count_links:
                             link_counter += 1
                             display_text.append((color, word))
-                            display_text.append(('is_link', f' [{link_counter}]'))
-                            display_text.append(('text', ' '))
+                            display_text.append(("is_link", f" [{link_counter}]"))
+                            display_text.append(("text", " "))
                             continue
                     elif any(word.startswith(keyword) for keyword in COLORS):
-                        color = COLORS.get(word[:4], 'text')
+                        color = COLORS.get(word[:4], "text")
                     elif is_valid_date(word):
-                        color = 'is_complete'
+                        color = "is_complete"
 
                 # Restore Markdown links and count if necessary
                 if word.startswith("MDLINK"):
                     i = int(word.replace("MDLINK", ""))
                     text, url = md_links[i]
                     if not is_task_complete:
-                        color = 'is_link'
+                        color = "is_link"
                     if should_count_links:
                         link_counter += 1
                         display_text.append((color, text))
-                        display_text.append(('is_link', f' [{link_counter}]'))
-                        display_text.append(('text', ' '))
+                        display_text.append(("is_link", f" [{link_counter}]"))
+                        display_text.append(("text", " "))
                         continue
                     else:
                         word = text  # If only one link, no need for a counter
 
                 display_text.append((color, word))
-                display_text.append(('text', ' '))
+                display_text.append(("text", " "))
 
             # Remove the trailing space from the colored text
             display_text = display_text[:-1]
 
             # Create a custom checkbox for the task and apply the color scheme
-            original_text = 'x ' + task['text'].strip() if task['completed'] else task['text'].strip()
-            checkbox = CustomCheckBox(display_text, state=task['completed'], original_text=original_text)
+            original_text = (
+                "x " + task["text"].strip()
+                if task["completed"]
+                else task["text"].strip()
+            )
+            checkbox = CustomCheckBox(
+                display_text, state=task["completed"], original_text=original_text
+            )
 
-            wrapped_checkbox = urwid.AttrMap(checkbox, None, focus_map='bold')
+            wrapped_checkbox = urwid.AttrMap(checkbox, None, focus_map="bold")
 
             # Add the checkbox to the list of widgets
             widgets.append(wrapped_checkbox)
@@ -216,7 +236,13 @@ class TaskUI:
         return urwid.Pile(widgets)
 
     @staticmethod
-    def open_task_add_edit_dialog(keymap_instance, title, default_text=None, place_cursor_at_end=True, focused_task_index=None):
+    def open_task_add_edit_dialog(
+        keymap_instance,
+        title,
+        default_text=None,
+        place_cursor_at_end=True,
+        focused_task_index=None,
+    ):
         """
         Opens a dialog for adding or editing a task.
 
@@ -232,6 +258,7 @@ class TaskUI:
 
         # Initialize Tasks instance
         from src.services.task_service import Tasks
+
         tasks = Tasks(keymap_instance.txt_file)
 
         # Function to handle the entered text
@@ -244,8 +271,8 @@ class TaskUI:
                 keymap_instance.refresh_displayed_tasks()
                 keymap_instance.focus_on_specific_task(focused_task_index)
             else:  # Add a new task
-                if setting_enabled('enableCompletionAndCreationDates'):
-                    text = datetime.now().strftime('%Y-%m-%d') + ' ' + text
+                if setting_enabled("enableCompletionAndCreationDates"):
+                    text = datetime.now().strftime("%Y-%m-%d") + " " + text
 
                 tasks.add(keymap_instance, text)
 
@@ -255,11 +282,17 @@ class TaskUI:
         # Function to identify the end of the task text component
         def find_task_text_end(task_text):
             # List of possible identifiers that mark the beginning of task metadata
-            identifiers = [' +', ' @', ' due:', ' rec:', ' t:', ' h:']
+            identifiers = [" +", " @", " due:", " end:", " rec:", " t:", " h:"]
 
             # Find the first occurrence of any metadata identifier, default to the full length of the text
-            first_identifier_pos = min([task_text.find(idf) for idf in identifiers if task_text.find(idf) != -1],
-                                       default=len(task_text))
+            first_identifier_pos = min(
+                [
+                    task_text.find(idf)
+                    for idf in identifiers
+                    if task_text.find(idf) != -1
+                ],
+                default=len(task_text),
+            )
             return first_identifier_pos
 
         # If default_text is provided, pre-fill the Edit widget
@@ -276,33 +309,47 @@ class TaskUI:
                 ask.set_edit_pos(len(default_text))
 
         # Create BoxAdapter to hold suggestions with a height of 1
-        suggestions_box_adapter = urwid.BoxAdapter(keymap_instance.auto_suggestions.dialog, height=1)
+        suggestions_box_adapter = urwid.BoxAdapter(
+            keymap_instance.auto_suggestions.dialog, height=1
+        )
 
         # Apply text color to suggestions_box_adapter
-        colored_suggestions_box = urwid.AttrMap(suggestions_box_adapter, 'context')
+        colored_suggestions_box = urwid.AttrMap(suggestions_box_adapter, "context")
 
         # Create Pile widget to hold the Edit and Suggestions widgets
-        layout = urwid.Pile([('pack', ask), ('pack', colored_suggestions_box)])
+        layout = urwid.Pile([("pack", ask), ("pack", colored_suggestions_box)])
 
         # Add a border and title around the layout
-        bordered_layout = urwid.LineBox(layout, title="Edit Task" if default_text else "Add Task")
+        bordered_layout = urwid.LineBox(
+            layout, title="Edit Task" if default_text else "Add Task"
+        )
 
         # Center the bordered layout
-        fill = urwid.Filler(bordered_layout, 'middle')
-        overlay = urwid.Overlay(fill, keymap_instance.tasklist_decorations, 'center', 80, 'middle', 5)
+        fill = urwid.Filler(bordered_layout, "middle")
+        overlay = urwid.Overlay(
+            fill, keymap_instance.tasklist_decorations, "center", 80, "middle", 5
+        )
 
         # Function to handle key presses in the dialog
         def keypress(key):
-            if key == 'enter':
+            if key == "enter":
                 on_ask(ask.get_edit_text())
                 urwid.ExitMainLoop()
                 tasks.normalize_file()
-            elif key == 'esc':
-                keymap_instance.main_frame.contents['body'] = (keymap_instance.tasklist_decorations, None)
-            elif key == 'tab':  # Autocomplete logic for projects/contexts
+            elif key == "esc":
+                keymap_instance.main_frame.contents["body"] = (
+                    keymap_instance.tasklist_decorations,
+                    None,
+                )
+            elif key == "tab":  # Autocomplete logic for projects/contexts
                 first_suggestion = None
-                if keymap_instance.auto_suggestions.dialog.body and len(keymap_instance.auto_suggestions.dialog.body) > 0:
-                    first_suggestion_widget = keymap_instance.auto_suggestions.dialog.body[0]
+                if (
+                    keymap_instance.auto_suggestions.dialog.body
+                    and len(keymap_instance.auto_suggestions.dialog.body) > 0
+                ):
+                    first_suggestion_widget = (
+                        keymap_instance.auto_suggestions.dialog.body[0]
+                    )
                     if first_suggestion_widget:
                         all_suggestions = first_suggestion_widget.get_text()[0]
                         if all_suggestions:
@@ -310,11 +357,16 @@ class TaskUI:
                 if first_suggestion:
                     cursor_position = ask.edit_pos
                     existing_text = ask.get_edit_text()
-                    start_of_word = existing_text.rfind(' ', 0, cursor_position) + 1
-                    end_of_word = existing_text.find(' ', cursor_position)
+                    start_of_word = existing_text.rfind(" ", 0, cursor_position) + 1
+                    end_of_word = existing_text.find(" ", cursor_position)
                     if end_of_word == -1:
                         end_of_word = len(existing_text)
-                    new_text = existing_text[:start_of_word] + first_suggestion + ' ' + existing_text[end_of_word:]
+                    new_text = (
+                        existing_text[:start_of_word]
+                        + first_suggestion
+                        + " "
+                        + existing_text[end_of_word:]
+                    )
                     ask.set_edit_text(new_text)
                     ask.set_edit_pos(start_of_word + len(first_suggestion) + 1)
 
@@ -322,8 +374,8 @@ class TaskUI:
         def on_text_change(edit, new_edit_text):
             cursor_position = edit.edit_pos
             text = new_edit_text
-            start_of_word = text.rfind(' ', 0, cursor_position) + 1
-            end_of_word = text.find(' ', cursor_position)
+            start_of_word = text.rfind(" ", 0, cursor_position) + 1
+            end_of_word = text.find(" ", cursor_position)
             if end_of_word == -1:
                 current_word = text[start_of_word:]
             else:
@@ -331,8 +383,8 @@ class TaskUI:
             keymap_instance.auto_suggestions.update_suggestions(current_word)
 
         # Connect the on_text_change function to the Edit widget
-        urwid.connect_signal(ask, 'change', on_text_change)
+        urwid.connect_signal(ask, "change", on_text_change)
 
         # Update the UI to show the dialog
-        keymap_instance.main_frame.contents['body'] = (overlay, None)
+        keymap_instance.main_frame.contents["body"] = (overlay, None)
         keymap_instance.loop.unhandled_input = keypress

@@ -8,8 +8,11 @@ import urwid
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from src.config.constants import (
-    PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX,
-    __sync_refresh_rate__
+    PRIORITY_REGEX,
+    DUE_DATE_REGEX,
+    END_DATE_REGEX,
+    RECURRENCE_REGEX,
+    __sync_refresh_rate__,
 )
 from src.config.settings import PALETTE, setting_enabled
 from src.utils.helpers import is_valid_date
@@ -27,7 +30,7 @@ class Tasks:
 
     # Reads task lines from the file and returns them as a list
     def read(self):
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             return [line.strip() for line in f.readlines()]
 
     # Sorts a list of tasks based on due date, priority, and text
@@ -36,35 +39,38 @@ class Tasks:
         def parse(task_text):
             priority_match = re.search(PRIORITY_REGEX, task_text)
             due_date_match = re.search(DUE_DATE_REGEX, task_text)
-            completed = task_text.startswith('x ')
+            completed = task_text.startswith("x ")
             recurrence_match = re.search(RECURRENCE_REGEX, task_text)
 
             if completed:
                 task_text = task_text[2:]
 
             return {
-                'text': task_text,
-                'priority': priority_match.group(1) if priority_match else None,
-                'due_date': due_date_match.group(1) if due_date_match else None,
-                'completed': completed,
-                'recurrence': recurrence_match.group(1) if recurrence_match else None,
+                "text": task_text,
+                "priority": priority_match.group(1) if priority_match else None,
+                "due_date": due_date_match.group(1) if due_date_match else None,
+                "completed": completed,
+                "recurrence": recurrence_match.group(1) if recurrence_match else None,
             }
 
         def get_sort_key(task):
             # Convert due_date to a date object for proper sorting, default to a date far in the future if None
-            due_date_key = datetime.strptime(task['due_date'], '%Y-%m-%d').date() if task['due_date'] else datetime(
-                9999, 12, 31).date()
+            due_date_key = (
+                datetime.strptime(task["due_date"], "%Y-%m-%d").date()
+                if task["due_date"]
+                else datetime(9999, 12, 31).date()
+            )
 
-            sort_text = ''
-            words = task['text'].split()
+            sort_text = ""
+            words = task["text"].split()
 
             for index, word in enumerate(words):
-                if index == 0 and word == 'x':
+                if index == 0 and word == "x":
                     continue
                 elif is_valid_date(word.strip()):
                     continue
                 else:
-                    sort_text += word + ' '
+                    sort_text += word + " "
 
             # Remove trailing whitespace and convert to lowercase for case-insensitive sorting
             sort_text = sort_text.strip().lower()
@@ -101,9 +107,9 @@ class Tasks:
 
         # Append the new task to the file
         if not self.task_already_exists(normalized_task):
-            with open(self.txt_file, 'a') as f:
+            with open(self.txt_file, "a") as f:
                 if not file_is_empty:
-                    f.write('\n')
+                    f.write("\n")
                 f.write(normalized_task)
 
         keymap_instance.refresh_displayed_tasks()
@@ -130,17 +136,17 @@ class Tasks:
         normalized_new_task = self.convert_nlp_to_dates(normalized_new_task)
 
         # Read all tasks from the file
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             tasks = f.readlines()
 
         # Find the task to be edited and replace it with the new task
         for i, task in enumerate(tasks):
             if self.normalize_task(task.strip()) == normalized_old_task:
-                tasks[i] = normalized_new_task + '\n'
+                tasks[i] = normalized_new_task + "\n"
                 break
 
         # Write the updated tasks back to the file
-        with open(self.txt_file, 'w') as f:
+        with open(self.txt_file, "w") as f:
             f.writelines(tasks)
 
         # Restructure the updated task components
@@ -154,14 +160,18 @@ class Tasks:
         normalized_task = self.normalize_task(task_text)
 
         # Read all tasks from the file
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             tasks = f.readlines()
 
         # Filter out the task to be deleted
-        tasks = [task for task in tasks if self.normalize_task(task.strip()) != normalized_task]
+        tasks = [
+            task
+            for task in tasks
+            if self.normalize_task(task.strip()) != normalized_task
+        ]
 
         # Write the remaining tasks back to the file
-        with open(self.txt_file, 'w') as f:
+        with open(self.txt_file, "w") as f:
             f.writelines(tasks)
 
     # Postpone task to tomorrow
@@ -173,7 +183,7 @@ class Tasks:
 
         # Convert the found due date to a datetime object
         due_date_str = due_date_match.group(1)
-        due_date_dt = datetime.strptime(due_date_str, '%Y-%m-%d')
+        due_date_dt = datetime.strptime(due_date_str, "%Y-%m-%d")
 
         # Get today's date
         today_dt = datetime.today().date()
@@ -182,24 +192,26 @@ class Tasks:
         if due_date_dt.date() >= today_dt:
             new_due_date_dt = due_date_dt + timedelta(days=1)
         else:
-            new_due_date_dt = datetime.combine(today_dt, datetime.min.time()) + timedelta(days=1)
+            new_due_date_dt = datetime.combine(
+                today_dt, datetime.min.time()
+            ) + timedelta(days=1)
 
         # Replace the original due date with the new one
-        new_due_date_str = datetime.strftime(new_due_date_dt, '%Y-%m-%d')
-        updated_task = re.sub(DUE_DATE_REGEX, f'due:{new_due_date_str}', task_text)
+        new_due_date_str = datetime.strftime(new_due_date_dt, "%Y-%m-%d")
+        updated_task = re.sub(DUE_DATE_REGEX, f"due:{new_due_date_str}", task_text)
 
         # Read all tasks from the file
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             tasks = f.readlines()
 
         # Find the task to be edited and replace it with the new task
         for i, task in enumerate(tasks):
             if task.strip() == task_text:
-                tasks[i] = updated_task + '\n'
+                tasks[i] = updated_task + "\n"
                 break
 
         # Write the updated tasks back to the file
-        with open(self.txt_file, 'w') as f:
+        with open(self.txt_file, "w") as f:
             f.writelines(tasks)
 
         return updated_task
@@ -224,7 +236,7 @@ class Tasks:
             text = task.strip()
 
             # Check if the task is already complete
-            is_complete = text.startswith('x ')
+            is_complete = text.startswith("x ")
 
             # Check if the modified task text matches the provided task_text
             if text == task_text and not task_toggled:
@@ -233,34 +245,45 @@ class Tasks:
 
                 # Toggle the task's completed state
                 if is_complete:
-                    modified_task = text[2:]  # Slice off "x " to make the task incomplete
+                    modified_task = text[
+                        2:
+                    ]  # Slice off "x " to make the task incomplete
 
-                    if setting_enabled('enableCompletionAndCreationDates'):
+                    if setting_enabled("enableCompletionAndCreationDates"):
                         if len(modified_task) >= 14 and is_valid_date(
-                                modified_task[4:14]):  # Task has creation date and priority
+                            modified_task[4:14]
+                        ):  # Task has creation date and priority
                             # Remove completion date since the task is no longer marked complete
                             modified_task = modified_task[:4] + modified_task[15:]
 
                         elif len(modified_task) >= 10 and is_valid_date(
-                                modified_task[0:10]):  # Task has creation date but no priority
+                            modified_task[0:10]
+                        ):  # Task has creation date but no priority
                             # Remove the completion date from the task
                             modified_task = modified_task[10:]
 
                 else:
-                    has_priority = bool(re.match(r'^\([A-Z]\)', text[0:3]))
+                    has_priority = bool(re.match(r"^\([A-Z]\)", text[0:3]))
                     priority = text[0:3]
 
-                    if setting_enabled('enableCompletionAndCreationDates'):
+                    if setting_enabled("enableCompletionAndCreationDates"):
                         if has_priority:
-                            modified_task = 'x ' + priority + ' ' + datetime.now().strftime('%Y-%m-%d') + re.sub(
-                                r'^\([A-Z]\)', '', text)
+                            modified_task = (
+                                "x "
+                                + priority
+                                + " "
+                                + datetime.now().strftime("%Y-%m-%d")
+                                + re.sub(r"^\([A-Z]\)", "", text)
+                            )
                         else:
-                            modified_task = 'x ' + datetime.now().strftime('%Y-%m-%d') + ' ' + text
+                            modified_task = (
+                                "x " + datetime.now().strftime("%Y-%m-%d") + " " + text
+                            )
                     else:
-                        modified_task = 'x ' + text
+                        modified_task = "x " + text
 
                 # Remove any extra white spaces
-                modified_tasks.append(re.sub(r'\s+', ' ', modified_task).strip())
+                modified_tasks.append(re.sub(r"\s+", " ", modified_task).strip())
 
                 # Handle recurring tasks
                 if "rec:" in text and not is_complete:
@@ -268,16 +291,24 @@ class Tasks:
                     recurrence_value = re.search(RECURRENCE_REGEX, text).group(1)
 
                     # Check if the recurrence is strict (starts with '+')
-                    is_strict = recurrence_value.startswith('+')
+                    is_strict = recurrence_value.startswith("+")
 
                     # Extract old due date and threshold date if present
                     due_date_match = re.search(DUE_DATE_REGEX, text)
-                    old_due_date = datetime.strptime(due_date_match.group(1),
-                                                     '%Y-%m-%d').date() if due_date_match else None
+                    old_due_date = (
+                        datetime.strptime(due_date_match.group(1), "%Y-%m-%d").date()
+                        if due_date_match
+                        else None
+                    )
 
-                    threshold_date_match = re.search(r't:(\d{4}-\d{2}-\d{2})', text)
-                    old_threshold_date = datetime.strptime(threshold_date_match.group(1),
-                                                           '%Y-%m-%d').date() if threshold_date_match else None
+                    threshold_date_match = re.search(r"t:(\d{4}-\d{2}-\d{2})", text)
+                    old_threshold_date = (
+                        datetime.strptime(
+                            threshold_date_match.group(1), "%Y-%m-%d"
+                        ).date()
+                        if threshold_date_match
+                        else None
+                    )
 
                     # Calculate new due date based on recurrence
                     amount_match = re.match(r"\+?(\d+)", recurrence_value)
@@ -285,55 +316,82 @@ class Tasks:
                         continue
                     amount = int(amount_match.group(1))
                     unit = recurrence_value[-1]
-                    unit_mapping = {'d': 'days', 'w': 'weeks', 'm': 'months', 'y': 'years'}
+                    unit_mapping = {
+                        "d": "days",
+                        "w": "weeks",
+                        "m": "months",
+                        "y": "years",
+                    }
                     delta = relativedelta(**{unit_mapping[unit]: amount})
 
                     if is_strict:
                         new_due_date = old_due_date + delta if old_due_date else None
-                        new_threshold_date = old_threshold_date + delta if old_threshold_date else None
+                        new_threshold_date = (
+                            old_threshold_date + delta if old_threshold_date else None
+                        )
                     else:
                         new_due_date = completion_date + delta
                         if old_threshold_date and old_due_date:
                             days_difference = (old_due_date - old_threshold_date).days
-                            new_threshold_date = new_due_date - relativedelta(days=days_difference)
+                            new_threshold_date = new_due_date - relativedelta(
+                                days=days_difference
+                            )
                         else:
                             new_threshold_date = None
 
                     # Format new due date and threshold date strings
-                    new_due_date_str = f'due:{new_due_date.strftime("%Y-%m-%d")}' if new_due_date else ''
-                    new_threshold_date_str = f't:{new_threshold_date.strftime("%Y-%m-%d")}' if new_threshold_date else ''
+                    new_due_date_str = (
+                        f"due:{new_due_date.strftime('%Y-%m-%d')}"
+                        if new_due_date
+                        else ""
+                    )
+                    new_threshold_date_str = (
+                        f"t:{new_threshold_date.strftime('%Y-%m-%d')}"
+                        if new_threshold_date
+                        else ""
+                    )
 
                     # Create new task with updated dates
                     new_task = text
                     if due_date_match:
                         new_task = re.sub(DUE_DATE_REGEX, new_due_date_str, new_task)
                     elif new_due_date_str:
-                        new_task += f' {new_due_date_str}'
+                        new_task += f" {new_due_date_str}"
 
                     if threshold_date_match:
-                        new_task = re.sub(r't:(\d{4}-\d{2}-\d{2})', new_threshold_date_str, new_task)
+                        new_task = re.sub(
+                            r"t:(\d{4}-\d{2}-\d{2})", new_threshold_date_str, new_task
+                        )
                     elif new_threshold_date_str:
-                        new_task += f' {new_threshold_date_str}'
+                        new_task += f" {new_threshold_date_str}"
 
                     has_priority = False
 
                     # Remove old creation date if present (for tasks without priority)
                     if len(modified_task) >= 10 and is_valid_date(new_task[0:10]):
-                        new_task = new_task[11:]  # strip creation date from new task text
+                        new_task = new_task[
+                            11:
+                        ]  # strip creation date from new task text
 
                     # Remove old creation date if present (for tasks with priority)
                     if len(modified_task) >= 14 and is_valid_date(new_task[4:14]):
-                        new_task = new_task[:3] + new_task[14:]  # strip creation date from new task text
+                        new_task = (
+                            new_task[:3] + new_task[14:]
+                        )  # strip creation date from new task text
                         has_priority = True
 
                     # Add new creation date if setting is enabled
-                    if setting_enabled('enableCompletionAndCreationDates'):
+                    if setting_enabled("enableCompletionAndCreationDates"):
                         if not has_priority:
-                            new_task = datetime.now().strftime('%Y-%m-%d') + ' ' + new_task
+                            new_task = (
+                                datetime.now().strftime("%Y-%m-%d") + " " + new_task
+                            )
                         else:
                             priority = new_task[:4]
                             text = new_task[3:]
-                            new_task = priority + datetime.now().strftime('%Y-%m-%d') + text
+                            new_task = (
+                                priority + datetime.now().strftime("%Y-%m-%d") + text
+                            )
 
                     # Add the new task to recurring_tasks if it doesn't already exist
                     if not self.task_already_exists(new_task):
@@ -343,8 +401,8 @@ class Tasks:
                 modified_tasks.append(text)
 
         # Write the updated tasks back to the file
-        with open(self.txt_file, 'w') as f:
-            f.write('\n'.join(modified_tasks + recurring_tasks))
+        with open(self.txt_file, "w") as f:
+            f.write("\n".join(modified_tasks + recurring_tasks))
 
     # Archives completed tasks to a 'done.txt' file and removes them from the original file
     def archive(self):
@@ -352,24 +410,24 @@ class Tasks:
         incomplete_tasks = []
 
         # Read all tasks from the file
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             tasks = f.readlines()
 
         # Separate tasks into completed and incomplete lists
         for task in tasks:
-            if task.startswith('x '):
+            if task.startswith("x "):
                 completed_tasks.append(task.strip())
             else:
                 incomplete_tasks.append(task.strip())
 
         # Append completed tasks to 'done.txt'
-        done_txt_file = os.path.join(os.path.dirname(self.txt_file), 'done.txt')
-        with open(done_txt_file, 'a') as f:
-            f.write('\n'.join(completed_tasks) + '\n')
+        done_txt_file = os.path.join(os.path.dirname(self.txt_file), "done.txt")
+        with open(done_txt_file, "a") as f:
+            f.write("\n".join(completed_tasks) + "\n")
 
         # Write only incomplete tasks back to the original task file
-        with open(self.txt_file, 'w') as f:
-            f.write('\n'.join(incomplete_tasks))
+        with open(self.txt_file, "w") as f:
+            f.write("\n".join(incomplete_tasks))
 
     # Format a single task line by splitting the task into its components
     def restructure_task_components(self, task):
@@ -385,6 +443,7 @@ class Tasks:
         contexts = []
         priority = ""
         due_date = ""
+        end_date = ""
         rec_rule = ""
         threshold_date = ""  # Variable for threshold date
         complete = False
@@ -393,24 +452,26 @@ class Tasks:
         words = task.split()
 
         for index, word in enumerate(words):
-            if index == 0 and word == 'x':
+            if index == 0 and word == "x":
                 complete = True
                 continue
-            elif word.startswith('+'):
+            elif word.startswith("+"):
                 projects.append(word)
-            elif word.startswith('@'):
+            elif word.startswith("@"):
                 contexts.append(word)
-            elif word.startswith('due:'):
+            elif word.startswith("due:"):
                 due_date = word
-            elif word.startswith('rec:'):
+            elif word.startswith("end:"):
+                end_date = word
+            elif word.startswith("rec:"):
                 rec_rule = word
-            elif word.startswith('t:'):  # Check for threshold date
+            elif word.startswith("t:"):  # Check for threshold date
                 threshold_date = word
             elif is_valid_date(word.strip()):
                 task_text_dates.append(word)
-            elif re.match(r'^\([A-Z]\)', word):
+            elif re.match(r"^\([A-Z]\)", word):
                 priority = word
-            elif word == 'h:1':
+            elif word == "h:1":
                 hidden_tag = word
             else:
                 task_text.append(word)
@@ -428,7 +489,7 @@ class Tasks:
 
         # Add dates if they exist
         if task_text_dates:
-            restructured_task_parts.append(' '.join(task_text_dates))
+            restructured_task_parts.append(" ".join(task_text_dates))
 
         # Add the main task text
         restructured_task_parts.extend(task_text)
@@ -440,6 +501,8 @@ class Tasks:
         # Modify here: Add due date before recurrence rule if they exist
         if due_date:
             restructured_task_parts.append(due_date)
+        if end_date:
+            restructured_task_parts.append(end_date)
         if rec_rule:
             restructured_task_parts.append(rec_rule)
 
@@ -452,33 +515,37 @@ class Tasks:
             restructured_task_parts.append(hidden_tag)
 
         # Join all parts with a single space
-        restructured_task = ' '.join(restructured_task_parts)
+        restructured_task = " ".join(restructured_task_parts)
 
         # If the task is complete, prepend 'x' to the task
         if complete:
-            restructured_task = 'x ' + restructured_task
+            restructured_task = "x " + restructured_task
 
         return restructured_task.strip()
 
     # Normalizes a single task by removing extra spaces and restructuring it
     def normalize_task(self, task_text):
         # Remove extra spaces
-        task_text = ' '.join(task_text.split())
+        task_text = " ".join(task_text.split())
         # Restructure the task
         return self.restructure_task_components(task_text)
 
     # Normalizes the entire task file
     def normalize_file(self, body=None):
         # Read all tasks from the file
-        with open(self.txt_file, 'r') as f:
+        with open(self.txt_file, "r") as f:
             tasks = f.readlines()
 
         # Remove extra spaces, filter out empty lines, and restructure tasks
-        normalized_tasks = [self.restructure_task_components(task.strip()) for task in tasks if task.strip()]
+        normalized_tasks = [
+            self.restructure_task_components(task.strip())
+            for task in tasks
+            if task.strip()
+        ]
 
         # Write the normalized tasks back to the file
-        with open(self.txt_file, 'w') as f:
-            f.write('\n'.join(normalized_tasks))
+        with open(self.txt_file, "w") as f:
+            f.write("\n".join(normalized_tasks))
 
         # Refresh the task list display if a Body instance is provided
         if body is not None:
@@ -488,46 +555,62 @@ class Tasks:
     @staticmethod
     def search(edit_widget, search_query, txt_file, tasklist_instance):
         import src.main as main_module
-        main_module.__current_search_query__ = search_query  # Update the current search query
+
+        main_module.__current_search_query__ = (
+            search_query  # Update the current search query
+        )
 
         # Create a Tasks instance for the given file path
         tasks = Tasks(txt_file)
 
         # Read all tasks and filter those that match the search query
-        filtered_tasks = [task for task in tasks.read() if search_query.lower() in task.lower()]
+        filtered_tasks = [
+            task for task in tasks.read() if search_query.lower() in task.lower()
+        ]
 
         # Update the UI to display only the filtered tasks
         tasklist_instance.body = urwid.SimpleFocusListWalker(
-            [w for w, _ in TaskUI.render_and_display_tasks(tasks.sort(filtered_tasks), PALETTE).contents])
+            [
+                w
+                for w, _ in TaskUI.render_and_display_tasks(
+                    tasks.sort(filtered_tasks), PALETTE
+                ).contents
+            ]
+        )
 
         # If 'Enter' was the last key pressed, refocus on the task list in the UI
-        if hasattr(tasklist_instance, 'last_key') and tasklist_instance.last_key == 'enter':
-            tasklist_instance.main_frame.focus_position = 'body'
-            delattr(tasklist_instance, 'last_key')  # Remove the attribute once it's been used
+        if (
+            hasattr(tasklist_instance, "last_key")
+            and tasklist_instance.last_key == "enter"
+        ):
+            tasklist_instance.main_frame.focus_position = "body"
+            delattr(
+                tasklist_instance, "last_key"
+            )  # Remove the attribute once it's been used
             tasklist_instance.set_focus(0)  # Focus on the first task in the list
 
-    # Convert natural language like due:tomorrow to actual dates
+    # Convert natural language like due:tomorrow or end:tomorrow to actual dates
     def convert_nlp_to_dates(self, task):
-        # Regular expression to find "due:" keyword and its value
-        due_date_match = re.search(r'due:([a-zA-Z0-9]+)', task)
+        def convert_date(task, prefix):
+            date_match = re.search(rf"{prefix}([a-zA-Z0-9]+)", task)
+            if not date_match:
+                return task
 
-        if due_date_match:
-            nlp_date = due_date_match.group(1).lower()
+            nlp_date = date_match.group(1).lower()
             today = datetime.now().date()
             weekday_to_number = {
-                'mon': 0,
-                'tue': 1,
-                'wed': 2,
-                'thu': 3,
-                'fri': 4,
-                'sat': 5,
-                'sun': 6
+                "mon": 0,
+                "tue": 1,
+                "wed": 2,
+                "thu": 3,
+                "fri": 4,
+                "sat": 5,
+                "sun": 6,
             }
 
-            # Convert natural language to standard date
-            if nlp_date in ['tod', 'today']:
+            if nlp_date in ["tod", "today"]:
                 new_date = today
-            elif nlp_date in ['tom', 'tomorrow']:
+            elif nlp_date in ["tom", "tomorrow"]:
                 new_date = today + timedelta(days=1)
             elif nlp_date in weekday_to_number.keys():
                 target_weekday = weekday_to_number[nlp_date]
@@ -535,55 +618,99 @@ class Tasks:
                 new_date = today + timedelta(days=days_until_target)
                 if days_until_target == 0:
                     new_date += timedelta(days=7)
-            elif nlp_date in ['nw', 'nextweek']:
+            elif nlp_date in ["nw", "nextweek"]:
                 new_date = today + timedelta((0 - today.weekday() + 7))
-            elif nlp_date in ['nm', 'nextmonth']:
+            elif nlp_date in ["nm", "nextmonth"]:
                 if today.month == 12:
                     new_date = today.replace(year=today.year + 1, month=1, day=1)
                 else:
                     new_date = today.replace(month=today.month + 1, day=1)
-            elif re.match(r'\d{1,2}[a-zA-Z]{3}(\d{4})?$', nlp_date):
-                # For patterns like 11dec, 1dec, or 11dec2027, 1dec2027
-                day_match = re.search(r'\d{1,2}', nlp_date)
-                month_match = re.search(r'[a-zA-Z]{3}', nlp_date)
-                year_match = re.search(r'\d{4}$', nlp_date)
+            elif re.match(r"^[+]?[0-9]+[dwmy]$", nlp_date):
+                num = int(nlp_date[:-1])
+                unit = nlp_date[-1]
+                if unit == "d":
+                    new_date = today + timedelta(days=num)
+                elif unit == "w":
+                    new_date = today + timedelta(weeks=num)
+                elif unit == "m":
+                    new_date = today + relativedelta(months=num)
+                elif unit == "y":
+                    new_date = today + relativedelta(years=num)
+            elif re.match(r"\d{1,2}[a-zA-Z]{3}(\d{4})?$", nlp_date):
+                day_match = re.search(r"\d{1,2}", nlp_date)
+                month_match = re.search(r"[a-zA-Z]{3}", nlp_date)
+                year_match = re.search(r"\d{4}$", nlp_date)
 
                 if day_match and month_match:
                     day = int(day_match.group(0))
                     month_str = month_match.group(0)
 
                     month_to_number = {
-                        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-                        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+                        "jan": 1,
+                        "feb": 2,
+                        "mar": 3,
+                        "apr": 4,
+                        "may": 5,
+                        "jun": 6,
+                        "jul": 7,
+                        "aug": 8,
+                        "sep": 9,
+                        "oct": 10,
+                        "nov": 11,
+                        "dec": 12,
                     }
                     month = month_to_number.get(month_str.lower())
                     if month is None:
-                        return task  # Return original if month is invalid
+                        return task
 
                     year = int(year_match.group(0)) if year_match else today.year
-                    if month < today.month or (month == today.month and day < today.day):
-                        year += 1  # Increment year if date has already passed
+                    if month < today.month or (
+                        month == today.month and day < today.day
+                    ):
+                        year += 1
                     new_date = datetime(year, month, day).date()
             else:
-                return task  # If it doesn't match any of these, return the original task
+                return task
 
-            # Replace in task
-            actual_due_date = f"due:{new_date.strftime('%Y-%m-%d')}"
-            task_text_with_actual_date = re.sub(r'due:[a-zA-Z0-9]+', actual_due_date, task)
+            actual_date = f"{prefix}{new_date.strftime('%Y-%m-%d')}"
+            return re.sub(rf"{prefix}[a-zA-Z0-9]+", actual_date, task)
 
-            return task_text_with_actual_date
-
-        # Return the original task if no conversion was possible
+        task = convert_date(task, "due:")
+        task = convert_date(task, "end:")
         return task
+
+    def delete_expired_tasks(self):
+        """Delete tasks whose end date is before today.
+
+        End dates are inclusive, so a task remains valid on its end date and is
+        removed on the following day.
+        """
+        today = datetime.now().date()
+        tasks = self.read()
+        remaining = []
+
+        for task in tasks:
+            end_match = re.search(r"end:(\d{4}-\d{2}-\d{2})", task)
+            if not end_match:
+                remaining.append(task)
+                continue
+
+            end_date = datetime.strptime(end_match.group(1), "%Y-%m-%d").date()
+            if end_date >= today:
+                remaining.append(task)
+
+        with open(self.txt_file, "w") as f:
+            f.write("\n".join(remaining))
 
     # Checks for updates in the task file and refreshes the UI if needed
     def sync(self, loop, user_data):
         import src.main as main_module
+
         # Unpack user data to get file path, UI instance, and last modification time
         txt_file, tasklist_instance, last_mod_time = user_data
 
         # Check if a dialog is currently open in the UI; if so, skip the update
-        if isinstance(tasklist_instance.main_frame.contents['body'][0], urwid.Overlay):
+        if isinstance(tasklist_instance.main_frame.contents["body"][0], urwid.Overlay):
             # Reschedule to run this method after 5 seconds
             loop.set_alarm_in(__sync_refresh_rate__, self.sync, user_data)
             return
@@ -598,8 +725,9 @@ class Tasks:
             focused_task_text = None
 
             # Use the original task text if available
-            if hasattr(focused_widget, 'original_widget') and isinstance(focused_widget.original_widget,
-                                                                         CustomCheckBox):
+            if hasattr(focused_widget, "original_widget") and isinstance(
+                focused_widget.original_widget, CustomCheckBox
+            ):
                 focused_task_text = focused_widget.original_widget.original_text
 
             # Refresh the task list UI
@@ -607,10 +735,16 @@ class Tasks:
 
             # Refocus on the previously focused task in the UI based on its original text
             if focused_task_text:
-                tasklist_instance.focus_on_specific_task(main_module.__focused_task_index__)
+                tasklist_instance.focus_on_specific_task(
+                    main_module.__focused_task_index__
+                )
 
             # Update the last known modification time
             last_mod_time[0] = current_mod_time
 
         # Reschedule this method to run again after 5 seconds
-        loop.set_alarm_in(__sync_refresh_rate__, self.sync, (txt_file, tasklist_instance, last_mod_time))
+        loop.set_alarm_in(
+            __sync_refresh_rate__,
+            self.sync,
+            (txt_file, tasklist_instance, last_mod_time),
+        )

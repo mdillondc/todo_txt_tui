@@ -14,9 +14,11 @@ class Task:
     """
     Represents a single todo.txt task with all its components.
     """
+
     text: str
     priority: Optional[str] = None
     due_date: Optional[str] = None
+    end_date: Optional[str] = None
     completed: bool = False
     recurrence: Optional[str] = None
     threshold_date: Optional[str] = None
@@ -34,7 +36,7 @@ class Task:
             self.projects = []
 
     @classmethod
-    def from_string(cls, task_string: str) -> 'Task':
+    def from_string(cls, task_string: str) -> "Task":
         """
         Parse a task string into a Task object.
 
@@ -45,7 +47,11 @@ class Task:
             Task object with parsed components
         """
         # Import here to avoid circular imports
-        from src.config.constants import PRIORITY_REGEX, DUE_DATE_REGEX, RECURRENCE_REGEX
+        from src.config.constants import (
+            PRIORITY_REGEX,
+            DUE_DATE_REGEX,
+            RECURRENCE_REGEX,
+        )
 
         task_string = task_string.strip()
 
@@ -56,30 +62,33 @@ class Task:
         contexts = []
         priority = None
         due_date = None
+        end_date = None
         recurrence = None
         threshold_date = None
         completed = False
         hidden = False
 
         # Check if task is completed
-        if task_string.startswith('x '):
+        if task_string.startswith("x "):
             completed = True
             task_string = task_string[2:]  # Remove 'x ' prefix
 
         words = task_string.split()
 
         for index, word in enumerate(words):
-            if word.startswith('+'):
+            if word.startswith("+"):
                 projects.append(word)
-            elif word.startswith('@'):
+            elif word.startswith("@"):
                 contexts.append(word)
-            elif word.startswith('due:'):
+            elif word.startswith("due:"):
                 due_date = word[4:]  # Remove 'due:' prefix
-            elif word.startswith('rec:'):
+            elif word.startswith("end:"):
+                end_date = word[4:]  # Remove 'end:' prefix
+            elif word.startswith("rec:"):
                 recurrence = word[4:]  # Remove 'rec:' prefix
-            elif word.startswith('t:'):
+            elif word.startswith("t:"):
                 threshold_date = word[2:]  # Remove 't:' prefix
-            elif word == 'h:1':
+            elif word == "h:1":
                 hidden = True
             elif re.match(PRIORITY_REGEX, word):
                 priority = word[1:-1]  # Remove parentheses
@@ -102,12 +111,13 @@ class Task:
             creation_date = task_dates[0]
 
         # Join remaining words as task text
-        text = ' '.join(task_text_parts)
+        text = " ".join(task_text_parts)
 
         return cls(
             text=text,
             priority=priority,
             due_date=due_date,
+            end_date=end_date,
             completed=completed,
             recurrence=recurrence,
             threshold_date=threshold_date,
@@ -116,7 +126,7 @@ class Task:
             creation_date=creation_date,
             completion_date=completion_date,
             hidden=hidden,
-            raw_text=task_string
+            raw_text=task_string,
         )
 
     def to_string(self) -> str:
@@ -130,11 +140,11 @@ class Task:
 
         # Add completion marker
         if self.completed:
-            parts.append('x')
+            parts.append("x")
 
         # Add priority
         if self.priority:
-            parts.append(f'({self.priority})')
+            parts.append(f"({self.priority})")
 
         # Add dates (completion date first if completed, then creation date)
         if self.completed and self.completion_date:
@@ -152,15 +162,17 @@ class Task:
 
         # Add metadata
         if self.due_date:
-            parts.append(f'due:{self.due_date}')
+            parts.append(f"due:{self.due_date}")
+        if self.end_date:
+            parts.append(f"end:{self.end_date}")
         if self.recurrence:
-            parts.append(f'rec:{self.recurrence}')
+            parts.append(f"rec:{self.recurrence}")
         if self.threshold_date:
-            parts.append(f't:{self.threshold_date}')
+            parts.append(f"t:{self.threshold_date}")
         if self.hidden:
-            parts.append('h:1')
+            parts.append("h:1")
 
-        return ' '.join(parts)
+        return " ".join(parts)
 
     def get_sort_key(self) -> tuple:
         """
@@ -170,10 +182,14 @@ class Task:
             Tuple suitable for sorting tasks
         """
         # Convert due_date to a date object for proper sorting
-        due_date_key = datetime.strptime(self.due_date, '%Y-%m-%d').date() if self.due_date else datetime(9999, 12, 31).date()
+        due_date_key = (
+            datetime.strptime(self.due_date, "%Y-%m-%d").date()
+            if self.due_date
+            else datetime(9999, 12, 31).date()
+        )
 
         # Create sort text without dates and completion markers
-        sort_text = self.text.lower().strip() if self.text else ''
+        sort_text = self.text.lower().strip() if self.text else ""
 
         return (due_date_key, sort_text)
 
@@ -183,7 +199,7 @@ class Task:
             return False
 
         try:
-            due_date = datetime.strptime(self.due_date, '%Y-%m-%d').date()
+            due_date = datetime.strptime(self.due_date, "%Y-%m-%d").date()
             return due_date < datetime.now().date()
         except ValueError:
             return False
@@ -194,7 +210,7 @@ class Task:
             return False
 
         try:
-            due_date = datetime.strptime(self.due_date, '%Y-%m-%d').date()
+            due_date = datetime.strptime(self.due_date, "%Y-%m-%d").date()
             return due_date == datetime.now().date()
         except ValueError:
             return False
@@ -216,12 +232,13 @@ class Task:
         full_text = self.to_string().lower()
         return query.lower() in full_text
 
-    def clone(self) -> 'Task':
+    def clone(self) -> "Task":
         """Create a copy of this task."""
         return Task(
             text=self.text,
             priority=self.priority,
             due_date=self.due_date,
+            end_date=self.end_date,
             completed=self.completed,
             recurrence=self.recurrence,
             threshold_date=self.threshold_date,
@@ -230,8 +247,9 @@ class Task:
             creation_date=self.creation_date,
             completion_date=self.completion_date,
             hidden=self.hidden,
-            raw_text=self.raw_text
+            raw_text=self.raw_text,
         )
+
 
 def parse_task_string(task_string: str) -> Task:
     """
@@ -256,7 +274,11 @@ def parse_task_list(task_strings: List[str]) -> List[Task]:
     Returns:
         List of Task objects
     """
-    return [Task.from_string(task_string) for task_string in task_strings if task_string.strip()]
+    return [
+        Task.from_string(task_string)
+        for task_string in task_strings
+        if task_string.strip()
+    ]
 
 
 def sort_tasks(tasks: List[Task]) -> List[Task]:

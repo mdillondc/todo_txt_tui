@@ -64,6 +64,7 @@ The application requires an existing todo.txt file. If the specified file doesn'
 - **Sorting**: Tasks sorted by due date, priority and alphabetical (in that order).
 - **Due Dates**: Tasks can have due dates and are grouped by them.
     - **Natural Language Processing (NLP)**: For example, `due:tom` or `due:tomorrow`.
+- **End Dates**: Tasks can have an expiration date. End dates are inclusive, so tasks remain valid on their `end:` date and are automatically deleted on startup starting the following day.
 - **Threshold Dates**: Also known as deferred tasks. See [details](details.md#threshold-dates).
 - **Recurring tasks**: Tasks can have a recurrence pattern, automatically creating new tasks upon completion. For example `rec:1d` or `rec:+1y`.
 - **Projects/Contexts**: With autosuggestions and autocompletion.
@@ -100,7 +101,7 @@ The application requires an existing todo.txt file. If the specified file doesn'
 | `SHIFT + [1-9]` | Display only tasks with priority A, B, C, D, E, F, G, H or I |
 | `ALT + [1-9]` | Filter tasks due on a specific day: ALT+1 today, ALT+2 tomorrow, ... ALT+9 today+8 |
 | `t` | Toggle visibility of tasks with threshold in future |
-| `h` | Toggle visibility of hidden tasks |
+| `h` | Toggle visibility of hidden tasks (List view) |
 | `q` | Quit application |
 
 The application uses the [urwid](http://urwid.org/) library for the terminal interface and supports powerful features like natural language date parsing, task completion tracking, and auto-suggestions.

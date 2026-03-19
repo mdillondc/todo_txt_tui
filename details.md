@@ -45,6 +45,34 @@ Convert natural language like `due:tomorrow` into the correct yyyy-mm-dd formatt
 * `due:nm` or `due:nextmonth`: 1st of next month.
 * `due:10jan`: Upcoming January 10th.
 * `due:10jan2027`: January 10th, 2027.
+* `due:+1d` or `due:1d`: Tomorrow (1 day from now).
+* `due:+3w` or `due:3w`: 3 weeks from now.
+* `due:+1m` or `due:1m`: 1 month from now.
+* `due:+1y` or `due:1y`: 1 year from now.
+
+## End Dates
+
+Specify using `end:` followed by date `YYYY-MM-DD` or use natural language like `end:tomorrow`.
+
+Example task: `Review documents end:2024-05-18`.
+
+For example, a task with `end:2024-05-18` remains visible on 2024-05-18 and will be removed on startup on 2024-05-19.
+
+When the application starts, any task with an `end:` date before today's date will be automatically deleted from your todo.txt file. End dates are inclusive, so a task remains valid on its `end:` date and expires starting the following day. This is useful for tasks that should expire automatically.
+
+**NLP (Natural Language Processing)**  
+End dates support the same natural language shorthand as due dates:
+
+* `end:tom` or `end:tomorrow`.
+* `end:tue` or `end:tuesday`: Set date to the upcoming Tuesday (works for all days).
+* `end:nw` or `end:nextweek`: Monday the following week.
+* `end:nm` or `end:nextmonth`: 1st of next month.
+* `end:10jan`: Upcoming January 10th.
+* `end:10jan2027`: January 10th, 2027.
+* `end:+1d` or `end:1d`: Tomorrow (1 day from now).
+* `end:+3w` or `end:3w`: 3 weeks from now.
+* `end:+1m` or `end:1m`: 1 month from now.
+* `end:+1y` or `end:1y`: 1 year from now.
 
 ## Recurring tasks
 

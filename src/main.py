@@ -9,7 +9,9 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from src.config.constants import (
-    __version__, __sync_refresh_rate__, __track_focused_task_interval__
+    __version__,
+    __sync_refresh_rate__,
+    __track_focused_task_interval__,
 )
 from src.config.settings import PALETTE
 from src.services.task_service import Tasks
@@ -17,9 +19,10 @@ from src.ui.components import Body, Search
 
 
 # Global state variables
-__current_search_query__ = ''
-__focused_task_index__ = ''
-__focused_task_text__ = ''
+__current_search_query__ = ""
+__focused_task_index__ = ""
+__focused_task_text__ = ""
+
 
 def handle_command_line_args() -> Optional[str]:
     """
@@ -29,11 +32,13 @@ def handle_command_line_args() -> Optional[str]:
         The path to the todo.txt file, or None if application should exit.
     """
     if len(sys.argv) > 1:
-        if sys.argv[1] == '--version':
+        if sys.argv[1] == "--version":
             print(f"Version: {__version__}")
             return None
-        elif sys.argv[1] == '--help':
-            print("Help (keybindings, features, etc): https://github.com/mdillondc/todo_txt_tui")
+        elif sys.argv[1] == "--help":
+            print(
+                "Help (keybindings, features, etc): https://github.com/mdillondc/todo_txt_tui"
+            )
             return None
 
     if len(sys.argv) < 2:
@@ -41,6 +46,7 @@ def handle_command_line_args() -> Optional[str]:
         return None
 
     return sys.argv[1]
+
 
 def validate_file_path(txt_file: str) -> bool:
     """
@@ -53,9 +59,12 @@ def validate_file_path(txt_file: str) -> bool:
         True if file exists, False otherwise
     """
     if not os.path.exists(txt_file):
-        print(f"The file '{txt_file}' does not exist. Are you sure you specified the correct path?")
+        print(
+            f"The file '{txt_file}' does not exist. Are you sure you specified the correct path?"
+        )
         return False
     return True
+
 
 def setup_ui_components(txt_file: str) -> tuple[Body, urwid.Frame]:
     """
@@ -79,10 +88,10 @@ def setup_ui_components(txt_file: str) -> tuple[Body, urwid.Frame]:
     # Connect search functionality
     urwid.connect_signal(
         search,
-        'change',
+        "change",
         lambda edit_widget, search_query: Tasks.search(
             edit_widget, search_query, txt_file, tasklist.tasklist_instance
-        )
+        ),
     )
 
     # Create a Frame to contain the search field and the tasklist
@@ -91,7 +100,10 @@ def setup_ui_components(txt_file: str) -> tuple[Body, urwid.Frame]:
 
     return tasklist, main_frame
 
-def initialize_application(txt_file: str, tasklist: Body, main_frame: urwid.Frame) -> tuple[Tasks, urwid.MainLoop, list[Optional[float]]]:
+
+def initialize_application(
+    txt_file: str, tasklist: Body, main_frame: urwid.Frame
+) -> tuple[Tasks, urwid.MainLoop, list[Optional[float]]]:
     """
     Initialize the application components.
 
@@ -105,6 +117,7 @@ def initialize_application(txt_file: str, tasklist: Body, main_frame: urwid.Fram
     """
     # Initialize Tasks to handle task manipulation
     tasks = Tasks(txt_file)
+    tasks.delete_expired_tasks()
     tasks.normalize_file(tasklist)
 
     # Initialize the MainLoop
@@ -119,7 +132,14 @@ def initialize_application(txt_file: str, tasklist: Body, main_frame: urwid.Fram
 
     return tasks, loop, last_mod_time
 
-def run_application(tasks: Tasks, loop: urwid.MainLoop, txt_file: str, tasklist: Body, last_mod_time: list[Optional[float]]) -> None:
+
+def run_application(
+    tasks: Tasks,
+    loop: urwid.MainLoop,
+    txt_file: str,
+    tasklist: Body,
+    last_mod_time: list[Optional[float]],
+) -> None:
     """
     Run the main application loop with periodic updates.
 
@@ -131,13 +151,16 @@ def run_application(tasks: Tasks, loop: urwid.MainLoop, txt_file: str, tasklist:
         last_mod_time: List containing last modification time of the file
     """
     # Set an alarm to check for file changes every 5 seconds
-    loop.set_alarm_in(__sync_refresh_rate__, tasks.sync, (txt_file, tasklist, last_mod_time))
+    loop.set_alarm_in(
+        __sync_refresh_rate__, tasks.sync, (txt_file, tasklist, last_mod_time)
+    )
 
     # Set an alarm to update focused task index every 1 second
     loop.set_alarm_in(__track_focused_task_interval__, tasklist.track_focused_task)
 
     # Start the MainLoop to display the application
     loop.run()
+
 
 def main() -> None:
     """
@@ -161,8 +184,6 @@ def main() -> None:
     # Run the application
     run_application(tasks, loop, txt_file, tasklist, last_mod_time)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-
-
-
